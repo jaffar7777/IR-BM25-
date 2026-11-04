@@ -1,0 +1,7 @@
+# Preserve exact bytes across operating systems: dataset/index hashes depend on them.
+* -text
+*.pdf binary
+*.npz binary
+*.npy binary
+*.png binary
+*.zip binary

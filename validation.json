@@ -1,0 +1,88 @@
+{
+  "passed": true,
+  "papers": 400,
+  "checks": [
+    {
+      "variant": "short",
+      "mode": "bm25",
+      "results": 10,
+      "seconds": 0.569
+    },
+    {
+      "variant": "short",
+      "mode": "dense",
+      "results": 10,
+      "seconds": 0.376
+    },
+    {
+      "variant": "short",
+      "mode": "rrf",
+      "results": 10,
+      "seconds": 0.395
+    },
+    {
+      "variant": "short",
+      "mode": "weighted",
+      "results": 10,
+      "seconds": 0.371
+    },
+    {
+      "variant": "medium",
+      "mode": "bm25",
+      "results": 10,
+      "seconds": 0.372
+    },
+    {
+      "variant": "medium",
+      "mode": "dense",
+      "results": 10,
+      "seconds": 0.368
+    },
+    {
+      "variant": "medium",
+      "mode": "rrf",
+      "results": 10,
+      "seconds": 0.362
+    },
+    {
+      "variant": "medium",
+      "mode": "weighted",
+      "results": 10,
+      "seconds": 0.364
+    },
+    {
+      "variant": "long",
+      "mode": "bm25",
+      "results": 10,
+      "seconds": 0.392
+    },
+    {
+      "variant": "long",
+      "mode": "dense",
+      "results": 10,
+      "seconds": 0.404
+    },
+    {
+      "variant": "long",
+      "mode": "rrf",
+      "results": 10,
+      "seconds": 0.389
+    },
+    {
+      "variant": "long",
+      "mode": "weighted",
+      "results": 10,
+      "seconds": 0.383
+    }
+  ],
+  "query_checks": [
+    "case invariance",
+    "abbreviation expansion",
+    "spelling correction",
+    "mandatory phrase matching",
+    "empty query",
+    "topic filter with reranking"
+  ],
+  "total_seconds": 26.297,
+  "limitation": "Functional checks only. No relevance judgments, precision/recall or ranking-quality evaluation."
+}
