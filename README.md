@@ -18,6 +18,8 @@ Open http://127.0.0.1:8501 if the browser does not open automatically. Stop with
 
 On Windows you can alternatively double-click `setup.bat` once, then `run.bat` for subsequent launches. The supplied local delivery has model weights and an index already prepared; `run.bat` can use the existing Python installation when no virtual environment is present.
 
+The older `corpus-data.zip` may remain in the repository as a legacy snapshot. When the two numbered archives are present, the updated engine uses those and ignores the legacy ZIP. Download both numbered archives for the complete 7-, 8- and 9-page medium dataset.
+
 ## Reproduce collection
 
 ```powershell
