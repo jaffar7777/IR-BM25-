@@ -3,12 +3,13 @@ import json
 import time
 import numpy as np
 from engine import Engine, ROOT, canonical
+from variants import VARIANTS
 
 def main():
     start = time.perf_counter()
     engine = Engine()
     checks = []
-    for variant in ['short', 'medium', 'long']:
+    for variant in VARIANTS:
         for mode in ['bm25', 'dense', 'rrf', 'weighted']:
             t = time.perf_counter()
             result = engine.search('machine translation', mode=mode, variant=variant)
@@ -31,7 +32,24 @@ def main():
     assert engine.search('')['results'] == []
     topic = engine.search('summarization', topic='summarization', rerank=True)
     assert topic['results'] and all(r['subtopic'] == 'summarization' for r in topic['results'])
-    report = {'passed': True, 'papers': len(engine.papers), 'checks': checks,
+    # Prove the ninth page is searched only when its length option is selected.
+    for i, paper in enumerate(engine.papers):
+        eight = canonical(engine.texts['medium8'][i])
+        nine_words = canonical(engine.texts['medium9'][i]).split()
+        phrase = ' '.join(nine_words[len(eight.split()) + 10:len(eight.split()) + 22])
+        if len(phrase.split()) != 12 or phrase in eight:
+            continue
+        outcomes = {v: engine.search('"'+phrase+'"', variant=v, correct=False)['results'] for v in ['medium7','medium8','medium9']}
+        if paper['arxiv_id'] in {r['arxiv_id'] for r in outcomes['medium9']}:
+            assert all(paper['arxiv_id'] not in {r['arxiv_id'] for r in outcomes[v]} for v in ['medium7','medium8'])
+            boundary_check = {'arxiv_id': paper['arxiv_id'], 'phrase': phrase, 'medium7': False, 'medium8': False, 'medium9': True}
+            break
+    else:
+        raise AssertionError('Could not verify a page-9-only phrase')
+    legacy = engine.search('machine translation', variant='medium')['results']
+    explicit = engine.search('machine translation', variant='medium8')['results']
+    assert legacy == explicit
+    report = {'passed': True, 'papers': len(engine.papers), 'checks': checks, 'medium_page_boundary_check': boundary_check,
               'query_checks': ['case invariance', 'abbreviation expansion', 'spelling correction', 'mandatory phrase matching', 'empty query', 'topic filter with reranking'],
               'total_seconds': round(time.perf_counter()-start, 3),
               'limitation': 'Functional checks only. No relevance judgments, precision/recall or ranking-quality evaluation.'}

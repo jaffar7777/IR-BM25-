@@ -6,75 +6,130 @@
       "variant": "short",
       "mode": "bm25",
       "results": 10,
-      "seconds": 0.569
+      "seconds": 0.63
     },
     {
       "variant": "short",
       "mode": "dense",
       "results": 10,
-      "seconds": 0.376
+      "seconds": 0.409
     },
     {
       "variant": "short",
+      "mode": "rrf",
+      "results": 10,
+      "seconds": 0.391
+    },
+    {
+      "variant": "short",
+      "mode": "weighted",
+      "results": 10,
+      "seconds": 0.393
+    },
+    {
+      "variant": "medium7",
+      "mode": "bm25",
+      "results": 10,
+      "seconds": 0.396
+    },
+    {
+      "variant": "medium7",
+      "mode": "dense",
+      "results": 10,
+      "seconds": 0.392
+    },
+    {
+      "variant": "medium7",
       "mode": "rrf",
       "results": 10,
       "seconds": 0.395
     },
     {
-      "variant": "short",
+      "variant": "medium7",
       "mode": "weighted",
       "results": 10,
-      "seconds": 0.371
+      "seconds": 0.397
     },
     {
-      "variant": "medium",
+      "variant": "medium8",
       "mode": "bm25",
       "results": 10,
-      "seconds": 0.372
+      "seconds": 0.391
     },
     {
-      "variant": "medium",
+      "variant": "medium8",
       "mode": "dense",
       "results": 10,
-      "seconds": 0.368
+      "seconds": 0.39
     },
     {
-      "variant": "medium",
+      "variant": "medium8",
       "mode": "rrf",
       "results": 10,
-      "seconds": 0.362
+      "seconds": 0.394
     },
     {
-      "variant": "medium",
+      "variant": "medium8",
       "mode": "weighted",
       "results": 10,
-      "seconds": 0.364
+      "seconds": 0.393
+    },
+    {
+      "variant": "medium9",
+      "mode": "bm25",
+      "results": 10,
+      "seconds": 0.396
+    },
+    {
+      "variant": "medium9",
+      "mode": "dense",
+      "results": 10,
+      "seconds": 0.395
+    },
+    {
+      "variant": "medium9",
+      "mode": "rrf",
+      "results": 10,
+      "seconds": 0.442
+    },
+    {
+      "variant": "medium9",
+      "mode": "weighted",
+      "results": 10,
+      "seconds": 0.409
     },
     {
       "variant": "long",
       "mode": "bm25",
       "results": 10,
-      "seconds": 0.392
+      "seconds": 0.436
     },
     {
       "variant": "long",
       "mode": "dense",
       "results": 10,
-      "seconds": 0.404
+      "seconds": 0.426
     },
     {
       "variant": "long",
       "mode": "rrf",
       "results": 10,
-      "seconds": 0.389
+      "seconds": 0.417
     },
     {
       "variant": "long",
       "mode": "weighted",
       "results": 10,
-      "seconds": 0.383
+      "seconds": 0.408
     }
   ],
+  "medium_page_boundary_check": {
+    "arxiv_id": "2611.00935",
+    "phrase": "nf4 inference with the adapters applied to the quantized base model and",
+    "medium7": false,
+    "medium8": false,
+    "medium9": true
+  },
   "query_checks": [
     "case invariance",
     "abbreviation expansion",
@@ -83,6 +138,6 @@
     "empty query",
     "topic filter with reranking"
   ],
-  "total_seconds": 26.297,
+  "total_seconds": 37.456,
   "limitation": "Functional checks only. No relevance judgments, precision/recall or ranking-quality evaluation."
 }

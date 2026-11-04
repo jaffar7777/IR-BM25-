@@ -1,6 +1,6 @@
 # Phase 1: arXiv Corpus and Hybrid Retrieval
 
-Category: **cs.CL**. Four keyword-derived subtopics: machine translation, question answering, summarization, dialogue systems. Target: **400 unique source papers, 100 per topic**, and three length variants per paper. Actual completion is recorded in `data/manifest.json` and checked by `audit.py`; target counts are not evidence of completion.
+Category: **cs.CL**. Four keyword-derived subtopics: machine translation, question answering, summarization, dialogue systems. **400 unique source papers, 100 per topic**, with five searchable variants per paper: short (5 pages), medium (7, 8 or 9 pages), and long (full paper, >9 pages). Actual counts are recorded in `data/manifest.json` and checked by `audit.py`.
 
 ## Run locally
 
@@ -14,7 +14,7 @@ python build_index.py
 python app.py
 ```
 
-Open http://127.0.0.1:8501 if the browser does not open automatically. Stop with Ctrl+C. On later runs, use `python app.py` without rebuilding. The embedding model and passage index are generated locally rather than committed as large Git files. The complete collected text dataset is committed as `corpus-data.zip` (about 23 MB) to fit GitHub website upload limits. Importing the engine unpacks it automatically on first use, preserving exact bytes and checksums. Original PDFs remain in the local delivery folder; their versioned URLs and SHA-256 checksums are in the dataset.
+Open http://127.0.0.1:8501 if the browser does not open automatically. Stop with Ctrl+C. On later runs, use `python app.py` without rebuilding. The embedding model and passage index are generated locally rather than committed as large Git files. The complete dataset is distributed in **both** `corpus-data-1.zip` and `corpus-data-2.zip`, each below GitHub's website upload limit. Keep both archives beside the code. Importing the engine unpacks them automatically on first use, preserving exact bytes and checksums. Original PDFs remain in the local delivery folder; their versioned URLs and SHA-256 checksums are in the dataset.
 
 On Windows you can alternatively double-click `setup.bat` once, then `run.bat` for subsequent launches. The supplied local delivery has model weights and an index already prepared; `run.bat` can use the existing Python installation when no virtual environment is present.
 
@@ -35,7 +35,7 @@ The collector checkpoints each accepted paper. Rerun after interruption. It uses
 
 Only source papers with at least 10 PDF pages and sufficient extractable text are accepted. The first 100 globally unique accepted papers for each topic are selected in descending submission-date order. Topic order resolves overlaps; a paper receives one label. Labels come from the arXiv keyword queries and are not expert-reviewed ground truth. Cross-listed cs.CL papers are permitted.
 
-Each paper has a **short first-5-page excerpt**, a **medium first-8-page excerpt**, and a **long full-paper variant** with at least 10 pages. Page counts refer to original PDF page boundaries, including references and appendices. Excerpts are not summaries or separately authored papers. This design permits controlled comparisons of retrieval on different lengths, but it biases the source corpus toward longer papers. The ambiguous 6-page gap in the assignment is avoided. Confirm with the instructor if they intended naturally short/medium/long source papers rather than derived variants.
+Each paper has a **short first-5-page excerpt**, three **medium excerpts of exactly 7, 8 and 9 pages**, and a **long full-paper variant** with at least 10 pages: **2,000 text variants** in total. The GUI offers all three medium lengths separately. BM25 and dense retrieval use the selected length's text and passage limits; this is not a label-only change. Page counts refer to original PDF boundaries, including references and appendices. Excerpts are not summaries or separately authored papers. This permits controlled length comparisons but biases the source corpus toward longer papers. Confirm with the instructor if they intended naturally short/medium/long source papers rather than derived variants.
 
 Text extraction uses PyMuPDF; equations, tables, columns, headers, references and scanned pages can reduce text quality. Full text is retained as extracted rather than claiming perfect reading order. Original source PDFs and versioned links allow inspection.
 
@@ -57,7 +57,7 @@ GUI: query field, four ranking modes including two real hybrid modes, length sel
 
 ## Files and submission
 
-After automatic extraction of `corpus-data.zip`, `data/papers.jsonl` has title, abstract, subtopic, arXiv URLs/version, source page count, original PDF checksum and paths/checksums/word counts for all variants. `data/texts/` contains the full local text dataset. `data/raw_api/` stores the exact API responses. `summary_report.pdf` is generated from actual corpus statistics. `data/audit.json` and `validation.json` record verification results. The archive contains all metadata, all 1,200 text variants, raw API responses, the original build audit and corpus statistics; it excludes large original PDFs.
+After automatic extraction of both corpus archives, `data/papers.jsonl` has title, abstract, subtopic, arXiv URLs/version, source page count, original PDF checksum and paths/checksums/word counts for all five variants. `data/texts/` contains all **2,000** text files. `data/raw_api/` stores the exact API responses. `summary_report.pdf` is generated from actual statistics. `data/audit.json` and `validation.json` record verification. The archives include metadata, all text variants, raw API responses, the build audit and statistics, and exclude large original PDFs. `package_corpus.py` reproduces the two archives. Existing old-format local datasets with PDFs can be upgraded using `upgrade_medium_variants.py`, followed by index rebuild and validation. The legacy API value `medium` remains an alias for `medium8`.
 
 `ai-logs/phase1/` discloses AI assistance. Review that folder against your course's full AI policy and add the complete exported Codex conversation if required; the programmatic work log is not represented as a complete platform transcript.
 

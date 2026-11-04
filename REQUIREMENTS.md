@@ -6,7 +6,7 @@
 | One chosen category | `cs.CL` in every recorded query |
 | At least 4 distinct subtopics | 100 papers per keyword-labeled topic; manifest and report tables |
 | Title, text, ID/link, label | Every paper record plus `data/texts/` |
-| Short, medium, long variants | First 5 / first 8 / all source PDF pages; long sources have >=10 pages |
+| Short, medium, long variants | First 5 pages / separate 7-, 8-, 9-page options / all pages; long sources have >=10 pages |
 | Local data | Text files, metadata, raw API responses, original PDFs in local delivery |
 | Reproducible query/date range | `collect.py`, `data/manifest.json`, raw responses, versioned URLs, checksums |
 | BM25 sparse retrieval | Direct implementation in `engine.py` |

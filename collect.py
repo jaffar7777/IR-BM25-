@@ -11,6 +11,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 import pymupdf
+from variants import VARIANT_PAGES, VARIANTS
 
 DATA = Path(__file__).parent / 'data'
 TOPICS = {'machine_translation': '"machine translation"', 'question_answering': '"question answering"',
@@ -50,7 +51,7 @@ def main():
     manifest = {'category': 'cs.CL', 'start_date': START, 'end_date': END,
                 'target_per_topic': args.per_topic, 'queries': {},
                 'selection': 'First 100 globally unique papers per topic in descending submission order with >=10 PDF pages and extractable text. Topic order is insertion order in TOPICS. Labels are keyword-derived, not human annotations.',
-                'variants': {'short': 'first 5 source PDF pages', 'medium': 'first 8 source PDF pages', 'long': 'all source PDF pages (at least 10)'},
+                'variants': {v: f'first {n} source PDF pages' if n else 'all source PDF pages (at least 10)' for v, n in VARIANT_PAGES.items()},
                 'started_at_utc': datetime.now(timezone.utc).isoformat()}
     old_manifest = DATA / 'manifest.json'
     if old_manifest.exists():
@@ -90,14 +91,15 @@ def main():
                         pdf.write_bytes(payload)
                     with pymupdf.open(pdf) as doc:
                         pages = [page.get_text(sort=True) for page in doc]
-                    if len(pages) < 10 or any(len(' '.join(pages[:n]).split()) < n * 80 for n in [5, 8, len(pages)]):
+                    if len(pages) < 10 or any(len(' '.join(pages[:n]).split()) < n * 80 for n in [5, 7, 8, 9, len(pages)]):
                         rejected.add(pid)
                         with rejected_path.open('a', encoding='utf-8') as f:
                             f.write(json.dumps({'arxiv_id': pid, 'pages': len(pages), 'reason': 'too short or insufficient extractable text'}) + '\n')
                         pdf.unlink()
                         continue
                     variants = {}
-                    for name, n in [('short', 5), ('medium', 8), ('long', len(pages))]:
+                    for name, limit in VARIANT_PAGES.items():
+                        n = limit or len(pages)
                         path = DATA / 'texts' / f'{version}_{name}.txt'
                         text = '\n\n'.join(pages[:n])
                         path.write_text(text, encoding='utf-8')

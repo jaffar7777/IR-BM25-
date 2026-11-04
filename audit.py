@@ -4,6 +4,7 @@ import json
 from collections import Counter
 from datetime import datetime
 from engine import ROOT
+from variants import VARIANTS, VARIANT_PAGES
 
 def audit(require_complete=True):
     records = [json.loads(s) for s in (ROOT / 'data/papers.jsonl').read_text(encoding='utf-8').splitlines()]
@@ -23,7 +24,8 @@ def audit(require_complete=True):
         date = p['published'].replace('-', '').replace(':', '').replace('T', '')[:12]
         if not manifest['start_date'] <= date <= manifest['end_date']:
             errors.append(f'{p["arxiv_id"]}: publication date outside query range')
-        for v, bounds in [('short', (1, 5)), ('medium', (7, 9)), ('long', (10, 10000))]:
+        for v in VARIANTS:
+            bounds = (VARIANT_PAGES[v], VARIANT_PAGES[v]) if VARIANT_PAGES[v] else (10, 10000)
             variant = p['variants'][v]
             path = ROOT / variant['path']
             if not path.exists():
@@ -39,11 +41,11 @@ def audit(require_complete=True):
         pdf = ROOT / p['pdf_path']
         if pdf.exists() and hashlib.sha256(pdf.read_bytes()).hexdigest() != p['pdf_sha256']:
             errors.append(f'PDF checksum mismatch: {pdf}')
-        if all((ROOT / p['variants'][v]['path']).exists() for v in ['short', 'medium', 'long']):
-            texts = {v: (ROOT / p['variants'][v]['path']).read_text(encoding='utf-8') for v in ['short', 'medium', 'long']}
-            if not texts['long'].startswith(texts['medium']) or not texts['medium'].startswith(texts['short']):
+        if all((ROOT / p['variants'][v]['path']).exists() for v in VARIANTS):
+            texts = {v: (ROOT / p['variants'][v]['path']).read_text(encoding='utf-8') for v in VARIANTS}
+            if any(not texts[b].startswith(texts[a]) for a,b in zip(VARIANTS, VARIANTS[1:])):
                 errors.append(f'{p["arxiv_id"]}: excerpts are not nested source-text prefixes')
-    result = {'passed': not errors, 'unique_papers': len(records), 'text_variants': 3 * len(records),
+    result = {'passed': not errors, 'unique_papers': len(records), 'text_variants': len(VARIANTS) * len(records),
               'subtopics': dict(counts), 'local_pdfs': sum((ROOT / p['pdf_path']).exists() for p in records),
               'errors': errors, 'checked_at': datetime.now().isoformat()}
     (ROOT / 'data/audit.json').write_text(json.dumps(result, indent=2), encoding='utf-8')

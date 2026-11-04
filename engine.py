@@ -7,6 +7,7 @@ from collections import Counter
 from difflib import get_close_matches
 from pathlib import Path
 import numpy as np
+from variants import VARIANTS
 
 ROOT = Path(__file__).parent
 ABBREVIATIONS = {'nlp': 'natural language processing', 'mt': 'machine translation', 'nmt': 'neural machine translation',
@@ -18,19 +19,28 @@ MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
 def ensure_corpus(root=ROOT):
     """Unpack the byte-preserving GitHub corpus distribution on first use."""
     import zipfile
-    archive = root / 'corpus-data.zip'
-    if not archive.exists():
+    parts = [root / f'corpus-data-{n}.zip' for n in (1, 2)]
+    if any(p.exists() for p in parts):
+        if not all(p.exists() for p in parts):
+            raise RuntimeError('Both corpus-data-1.zip and corpus-data-2.zip are required.')
+        archives = parts
+    else:
+        archives = [root / 'corpus-data.zip']
+    if not all(p.exists() for p in archives):
         return
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    digest = hashlib.sha256(b''.join(hashlib.sha256(p.read_bytes()).digest() for p in archives)).hexdigest()
     marker = root / 'data/.corpus-unpacked.sha256'
     if marker.exists() and marker.read_text().strip() == digest:
         return
-    with zipfile.ZipFile(archive) as source:
-        for entry in source.infolist():
-            target = (root / entry.filename).resolve()
-            if not target.is_relative_to(root.resolve()):
-                raise ValueError('Unsafe path in corpus archive')
-        source.extractall(root)
+    for archive in archives:
+        with zipfile.ZipFile(archive) as source:
+            for entry in source.infolist():
+                target = (root / entry.filename).resolve()
+                if not target.is_relative_to(root.resolve()):
+                    raise ValueError('Unsafe path in corpus archive')
+    for archive in archives:
+        with zipfile.ZipFile(archive) as source:
+            source.extractall(root)
     marker.write_text(digest)
 
 ensure_corpus()
@@ -111,7 +121,7 @@ class Engine:
         self.idfs = {}
         self.lengths = {}
         self.vocab = set()
-        for variant in ['short', 'medium', 'long']:
+        for variant in VARIANTS:
             texts = [p['title'] + '\n' + (ROOT / p['variants'][variant]['path']).read_text(encoding='utf-8') for p in self.papers]
             self.texts[variant] = texts
             counters = [Counter(tokens(t)) for t in texts]
@@ -127,6 +137,9 @@ class Engine:
             raise RuntimeError('Corpus changed; run python build_index.py again.')
 
     def search(self, query, mode='rrf', variant='long', alpha=.5, correct=True, rerank=False, topic='all'):
+        variant = 'medium8' if variant == 'medium' else variant
+        if variant not in VARIANTS:
+            raise ValueError('Invalid variant')
         query = query.strip()
         if not query:
             return {'query': '', 'changes': [], 'results': []}
@@ -179,4 +192,4 @@ class Engine:
                             'subtopic': p['subtopic'], 'snippet': text[start:start + 200],
                             'score': float(scores[i] + ((.005 if mode == 'rrf' else .05) * bonus.get(i, 0))),
                             'bm25': float(sparse[i]), 'dense': float(dense[i])})
-        return {'query': normalized, 'phrases': phrases, 'changes': changes, 'results': results}
+        return {'query': normalized, 'variant': variant, 'phrases': phrases, 'changes': changes, 'results': results}

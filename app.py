@@ -5,6 +5,7 @@ import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from engine import Engine, ROOT
+from variants import VARIANTS
 
 PAGE = r'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>arXiv Hybrid Search</title>
 <style>
@@ -12,7 +13,7 @@ PAGE = r'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="view
 </style><main><header><span class="badge">PHASE 1 · COMPUTATIONAL LINGUISTICS</span><h1>arXiv Hybrid Search</h1><div class="muted">Find research through lexical and semantic retrieval.</div></header>
 <section class="panel"><form id="search"><input id="query" type="search" required maxlength="500" placeholder='Try: NLP summarization or "machine translation"' aria-label="Search query"><button id="button">Search</button></form>
 <div class="options"><label>Ranking<select id="mode"><option value="rrf">Hybrid · Reciprocal Rank Fusion</option><option value="weighted">Hybrid · Weighted scores</option><option value="bm25">BM25 only</option><option value="dense">Dense only</option></select></label>
-<label>Document variant<select id="variant"><option value="long">Long · full paper</option><option value="medium">Medium · first 8 pages</option><option value="short">Short · first 5 pages</option></select></label>
+<label>Document variant<select id="variant"><option value="long">Long · full paper (&gt;9 pages)</option><optgroup label="Medium · 7–9 pages inclusive"><option value="medium7">Medium · 7 pages</option><option value="medium8">Medium · 8 pages</option><option value="medium9">Medium · 9 pages</option></optgroup><option value="short">Short · first 5 pages</option></select></label>
 <label>Subtopic<select id="topic"><option value="all">All subtopics</option><option value="machine_translation">Machine translation</option><option value="question_answering">Question answering</option><option value="summarization">Summarization</option><option value="dialogue_systems">Dialogue systems</option></select></label>
 <label>BM25 weight<select id="alpha"><option value="0.5">50% (weighted fusion)</option><option value="0.25">25%</option><option value="0.75">75%</option></select></label></div>
 <div class="options"><label><input id="correct" type="checkbox" checked> Correct spelling</label><label><input id="rerank" type="checkbox"> Rerank top 50 by title coverage</label></div>
@@ -56,7 +57,7 @@ def main():
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data.get('query'), str) or len(data['query']) > 500:
                     raise ValueError('Query must be at most 500 characters')
-                if data.get('variant', 'long') not in ['short', 'medium', 'long']:
+                if data.get('variant', 'long') not in (*VARIANTS, 'medium'):
                     raise ValueError('Invalid variant')
                 if not 0 <= float(data.get('alpha', .5)) <= 1:
                     raise ValueError('Weight must be between 0 and 1')

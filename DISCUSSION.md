@@ -1,11 +1,11 @@
 # Live discussion guide
 
-1. Run `python audit.py`, then `python app.py`. Explain that 400 papers are unique sources; 1,200 text variants are not 1,200 independent papers.
+1. Run `python audit.py`, then `python app.py`. Explain that 400 papers are unique sources; 2,000 text variants are not 2,000 independent papers.
 2. Search `NLP summarization`. Point out the displayed abbreviation expansion.
 3. Search `translatoin`; inspect spelling correction, then switch it off.
 4. Search `"machine translation"`. Explain the required phrase filter and case normalization.
 5. Compare BM25, dense, RRF and weighted fusion. Hybrid modes produce one fused list, not side-by-side models. Explain why RRF does not require raw scores to share a scale.
-6. Switch between short, medium and long. Each mode searches the selected excerpt/full text, not only abstracts. The title is included once in lexical text and prefixed to each dense passage.
+6. Switch between short, medium (7 pages), medium (8 pages), medium (9 pages) and long. All three medium lengths are included. Each option searches its exact excerpt/full text, not only abstracts. A phrase occurring only on page 9 must not match the same paper's 7- or 8-page excerpts. The title is included once in lexical text and prefixed to each dense passage.
 7. Enable title reranking. Explain the candidate set (top 50), bonus formula, and lack of trained relevance labels. It can change rank, and might reduce quality.
 8. Explain the dense pipeline: pretrained encoder, mean pooling, vector normalization, cosine similarity, passage max to document aggregation. The model is not trained from scratch.
 9. Discuss limitations: heuristic labels, topic overlap resolved by first assignment, long-source selection bias, truncated model inputs, noisy PDF extraction, title heuristic, no human relevance judgments, excerpt interpretation needing instructor confirmation.

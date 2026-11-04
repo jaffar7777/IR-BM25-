@@ -11,6 +11,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from engine import ROOT
 from audit import audit
+from variants import VARIANTS, VARIANT_PAGES, VARIANT_LABELS
 
 def main():
     check = audit()
@@ -19,7 +20,7 @@ def main():
     papers = [json.loads(s) for s in (ROOT / 'data/papers.jsonl').read_text(encoding='utf-8').splitlines()]
     manifest = json.loads((ROOT / 'data/manifest.json').read_text())
     validation = json.loads((ROOT / 'validation.json').read_text()) if (ROOT / 'validation.json').exists() else None
-    stats = {'unique_papers': len(papers), 'variants': 3 * len(papers), 'topics': dict(Counter(p['subtopic'] for p in papers)),
+    stats = {'unique_papers': len(papers), 'variants': len(VARIANTS) * len(papers), 'topics': dict(Counter(p['subtopic'] for p in papers)),
              'source_pages': {'min': min(p['original_pages'] for p in papers), 'max': max(p['original_pages'] for p in papers),
                               'mean': mean(p['original_pages'] for p in papers), 'median': median(p['original_pages'] for p in papers)},
              'years': dict(sorted(Counter(p['published'][:4] for p in papers).items()))}
@@ -44,14 +45,14 @@ def main():
     p('arXiv Corpus &amp; Hybrid Retrieval', 'Title')
     p('Phase 1 | Corpus statistics and implementation summary', 'Heading2')
     p('Prepared ' + datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC') + ' | Category: cs.CL')
-    p(f'<b>{len(papers)} unique source papers</b> across four subtopics, with <b>{3*len(papers)} text variants</b>. Variants are excerpts of the same sources and are not counted as additional papers.')
+    p(f'<b>{len(papers)} unique source papers</b> across four subtopics, with <b>{len(VARIANTS)*len(papers)} text variants</b>. Medium includes separate 7-, 8- and 9-page choices. Variants are not counted as additional papers.')
     table([['Subtopic', 'Unique papers', 'Share']] + [[k.replace('_',' ').title(), n, f'{100*n/len(papers):.1f}%'] for k,n in stats['topics'].items()], [270,100,100])
     p('Document lengths', 'Heading2')
-    table([['Variant', 'Source PDF pages', 'Mean words', 'Median words']] + [[v.title(), '5' if v=='short' else '8' if v=='medium' else '>9 (full)', f"{mean(p['variants'][v]['words'] for p in papers):,.0f}", f"{median(p['variants'][v]['words'] for p in papers):,.0f}"] for v in ['short','medium','long']], [110,110,125,125])
+    table([['Variant', 'Source PDF pages', 'Mean words', 'Median words']] + [[VARIANT_LABELS[v], str(VARIANT_PAGES[v]) if VARIANT_PAGES[v] else '>9 (full)', f"{mean(p['variants'][v]['words'] for p in papers):,.0f}", f"{median(p['variants'][v]['words'] for p in papers):,.0f}"] for v in VARIANTS], [110,110,125,125])
     p(f"Original PDF pages: min {stats['source_pages']['min']}, max {stats['source_pages']['max']}, mean {stats['source_pages']['mean']:.1f}, median {stats['source_pages']['median']:.1f}. Publication years: " + ', '.join(f'{y}: {n}' for y,n in stats['years'].items()) + '.')
     p('Collection and labeling', 'Heading2')
     p('The arXiv Atom API was queried for cs.CL papers submitted from 2023-01-01 00:00 UTC to 2026-10-31 23:59 UTC. Papers were sorted by submission date descending. The collector accepted 100 globally unique, extractable papers of at least 10 pages for each topic. Overlapping matches were assigned to the first topic visited. Labels are keyword-derived; they have not been manually validated.')
-    p('The short variant contains source pages 1-5; medium contains pages 1-8; long contains all pages. This gives controlled length comparisons but favors long source papers. These are page excerpts, not summaries. Confirm this interpretation of variants with the instructor.')
+    p('Short contains source pages 1-5. Medium offers source pages 1-7, 1-8 and 1-9 as separate searchable variants. Long contains all pages. These are excerpts, not summaries; long-source selection favors longer papers. Confirm the excerpt interpretation with the instructor.')
     story.append(PageBreak())
     p('Reproducibility &amp; retrieval design', 'Title')
     p('Exact arXiv queries', 'Heading2')
@@ -64,7 +65,7 @@ def main():
     p('Default fusion is RRF: sum 1/(60+rank) over sparse and dense ranks, with one-based ranks and sparse contributions only for lexical matches. Weighted fusion combines min-max normalized sparse and dense scores with selectable alpha. Both produce one fused list. Scores are ranking values, not probabilities.')
     p('Casefolding, abbreviation expansion, visible optional spelling correction and required quoted-phrase matching are implemented. The GUI provides ranking/variant selectors and top-10 unique-paper results with titles, links, approximately 200-character snippets and scores. Optional top-50 reranking adds a small title-term coverage bonus; it is not a trained reranker.')
     p('Verification and limitations', 'Heading2')
-    p(f"Corpus integrity audit: PASSED; {check['unique_papers']} unique sources; {check['text_variants']} checksum-verified text files; {check['local_pdfs']} local PDFs. " + ('All 12 mode/variant search combinations and query-handling integration checks passed.' if validation and validation.get('passed') else 'End-to-end validation results are not yet available.'))
+    p(f"Corpus integrity audit: PASSED; {check['unique_papers']} unique sources; {check['text_variants']} checksum-verified text files; {check['local_pdfs']} local PDFs. " + (f"All {len(validation['checks'])} mode/variant combinations and query-handling checks passed, including a page-9-only phrase absent from 7- and 8-page variants." if validation and validation.get('passed') else 'End-to-end validation results are not yet available.'))
     p('Functional tests do not establish retrieval relevance. No human relevance judgments, precision/recall or effectiveness improvements are claimed. Other limitations: noisy PDF extraction, keyword-label ambiguity, long-source selection bias, possible input truncation, rare-name spelling errors, and max-passage scoring favoring documents with more passages. Original papers retain their individual rights. AI assistance is disclosed under ai-logs/phase1/.', 'SmallText')
     def footer(canvas, doc):
         canvas.setFont('Helvetica',8)

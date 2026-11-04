@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import numpy as np
 from engine import Encoder, ROOT, MODEL
+from variants import VARIANTS
 
 def main():
     encoder = Encoder(local=False)
@@ -10,19 +11,21 @@ def main():
     papers = [json.loads(line) for line in papers_path.read_text(encoding='utf-8').splitlines()]
     folder = ROOT / 'index'
     folder.mkdir(exist_ok=True)
-    all_vectors, ids, ends, limits = [], [], [], {v: [] for v in ['short', 'medium', 'long']}
+    all_vectors, ids, ends, limits = [], [], [], {v: [] for v in VARIANTS}
     for i, paper in enumerate(papers):
         texts = {v: (ROOT / paper['variants'][v]['path']).read_text(encoding='utf-8').split() for v in limits}
         words = texts['long']
         chunks, chunk_ends = [], []
         # Boundaries at variant endings ensure every variant has complete text coverage.
-        boundaries = sorted({0, len(texts['short']), len(texts['medium']), len(words)})
+        boundaries = sorted({0, *(len(t) for t in texts.values())})
         for lo, hi in zip(boundaries, boundaries[1:]):
             for start in range(lo, hi, 100):
                 end = min(start + 120, hi)
                 chunks.append(paper['title'][:200] + '\n' + ' '.join(words[start:end]))
                 chunk_ends.append(end)
-        cache = folder / f'{paper["versioned_id"]}.npy'
+        # A content-based key prevents reuse of embeddings from older page boundaries.
+        signature = hashlib.sha256(json.dumps(chunks, ensure_ascii=False).encode()).hexdigest()[:16]
+        cache = folder / f'{paper["versioned_id"]}_{signature}.npy'
         if cache.exists():
             vectors = np.load(cache)
             if len(vectors) != len(chunks):
@@ -40,7 +43,7 @@ def main():
                         end_word=np.array(ends), **{f'{v}_limit': np.array(x) for v, x in limits.items()})
     (folder / 'manifest.json').write_text(json.dumps({'model': MODEL, 'pooling': 'attention-masked mean, L2 normalized',
         'max_tokens': 256, 'chunk_words': 120, 'stride_words': 100, 'title_prefix': True,
-        'corpus_sha256': hashlib.sha256(papers_path.read_bytes()).hexdigest(), 'papers': len(papers), 'chunks': len(ids)}, indent=2))
+        'variants': list(VARIANTS), 'corpus_sha256': hashlib.sha256(papers_path.read_bytes()).hexdigest(), 'papers': len(papers), 'chunks': len(ids)}, indent=2))
 
 if __name__ == '__main__':
     main()
