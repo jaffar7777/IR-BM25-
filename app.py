@@ -21,7 +21,24 @@ PAGE = r'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="view
 <p id="status" role="status">Ready. Search across locally stored papers.</p><section id="results" aria-label="Search results"></section><footer>Original papers remain linked to arXiv. Short and medium variants are source-page excerpts, not rewritten papers.</footer></main>
 <script>
 const $=id=>document.getElementById(id);function element(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
-$('search').addEventListener('submit',async event=>{event.preventDefault();$('button').disabled=true;$('status').textContent='Searching…';$('results').replaceChildren();const start=performance.now();try{const response=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:$('query').value,mode:$('mode').value,variant:$('variant').value,topic:$('topic').value,alpha:Number($('alpha').value),correct:$('correct').checked,rerank:$('rerank').checked})});const data=await response.json();if(!response.ok)throw Error(data.error);$('status').textContent=`${data.results.length} results · ${((performance.now()-start)/1000).toFixed(2)} seconds\nProcessed query: ${data.query}`+(data.changes.length?'\nChanges: '+data.changes.join('; '):'')+(data.phrases?.length?'\nRequired phrases: '+data.phrases.join('; '):'');if(!data.results.length)$('status').textContent+='\nNo matching papers. Try fewer terms or remove phrase constraints.';data.results.forEach((r,i)=>{const card=element('article');card.append(element('span','score',r.score.toFixed(5)));const heading=element('h2');const link=element('a','',`${i+1}. ${r.title}`);link.href=r.url;link.target='_blank';link.rel='noopener noreferrer';heading.append(link);card.append(heading,element('div','meta',`${r.arxiv_id} · ${r.subtopic.replaceAll('_',' ')}`),element('p','snippet',r.snippet),element('div','meta',`BM25 ${r.bm25.toFixed(3)} · dense cosine ${r.dense.toFixed(3)}`));$('results').append(card);});}catch(error){$('status').textContent='Search failed: '+error.message;}finally{$('button').disabled=false;}});
+
+function appendHighlighted(target, text, terms) {
+    let offset = 0;
+    for (const word of text.matchAll(/[\p{L}\p{N}]+/gu)) {
+        if (!terms.has(word[0].toLowerCase())) continue;
+        target.append(text.slice(offset, word.index), element('mark', '', word[0]));
+        offset = word.index + word[0].length;
+    }
+    target.append(text.slice(offset));
+}
+$('search').addEventListener('submit',async event=>{event.preventDefault();$('button').disabled=true;$('status').textContent='Searching…';$('results').replaceChildren();const start=performance.now();try{const response=await fetch('/api/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:$('query').value,mode:$('mode').value,variant:$('variant').value,topic:$('topic').value,alpha:Number($('alpha').value),correct:$('correct').checked,rerank:$('rerank').checked})});const data=await response.json();if(!response.ok)throw Error(data.error);$('status').textContent=`${data.results.length} results · ${((performance.now()-start)/1000).toFixed(2)} seconds\nProcessed query: ${data.query}`+(data.changes.length?'\nChanges: '+data.changes.join('; '):'')+(data.phrases?.length?'\nRequired phrases: '+data.phrases.join('; '):'');if(!data.results.length)$('status').textContent+='\nNo matching papers. Try fewer terms or remove phrase constraints.';
+const terms = new Set([data.query, ...(data.phrases ?? [])].join(' ').match(/[a-z0-9]+/g) ?? []);
+data.results.forEach((r,i)=>{const card=element('article');card.append(element('span','score',r.score.toFixed(5)));const heading=element('h2');
+const link = element('a', '', `${i + 1}. `);
+appendHighlighted(link, r.title, terms);
+const snippet = element('p', 'snippet');
+appendHighlighted(snippet, r.snippet, terms);
+link.href=r.url;link.target='_blank';link.rel='noopener noreferrer';heading.append(link);card.append(heading,element('div','meta',`${r.arxiv_id} · ${r.subtopic.replaceAll('_',' ')}`),snippet,element('div','meta',`BM25 ${r.bm25.toFixed(3)} · dense cosine ${r.dense.toFixed(3)}`));$('results').append(card);});}catch(error){$('status').textContent='Search failed: '+error.message;}finally{$('button').disabled=false;}});
 </script></html>'''
 
 def main():
